@@ -34,6 +34,8 @@ npm i
 npm install axios
 npm install multer
 npm install mongoose dotenv
+
+
 # Step 4: Start the development server with auto-reloading and an instant preview.
 npm run dev
 ```
