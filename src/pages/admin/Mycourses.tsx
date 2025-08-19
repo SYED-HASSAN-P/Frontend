@@ -17,6 +17,16 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   Search,
   Filter,
   Plus,
@@ -41,6 +51,10 @@ const Mycourses = () => {
   const [courses, setCourses] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // 🔒 for AlertDialog
+  const [deleteCourseId, setDeleteCourseId] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
+
   useEffect(() => {
     const fetchCourses = async () => {
       try {
@@ -54,6 +68,7 @@ const Mycourses = () => {
     };
     fetchCourses();
   }, []);
+
   const categories = ["Web Development", "Data Science", "Design", "Marketing", "Mobile Development"];
 
   const filteredCourses = courses.filter(course => {
@@ -83,6 +98,21 @@ const Mycourses = () => {
     }
   };
 
+  // 🧹 delete confirmed (called from AlertDialog "Delete")
+  const handleConfirmDelete = async () => {
+    if (!deleteCourseId) return;
+    try {
+      setDeleting(true);
+      await axios.delete(`http://localhost:5000/api/courses/${deleteCourseId}`);
+      setCourses(prev => prev.filter(c => c._id !== deleteCourseId));
+      setDeleteCourseId(null);
+    } catch (error) {
+      console.error("Error deleting course:", error);
+      alert("Failed to delete the course. Please try again.");
+    } finally {
+      setDeleting(false);
+    }
+  };
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
@@ -108,6 +138,7 @@ const Mycourses = () => {
           Create Course
         </Button>
       </div>
+
       {/* Stats Cards */}
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
         <Card>
@@ -227,7 +258,6 @@ const Mycourses = () => {
                 className="w-full h-48 object-cover rounded-t-xl"
               />
 
-
               <CardHeader>
                 <div className="flex items-start justify-between">
                   <div className="space-y-1">
@@ -245,7 +275,7 @@ const Mycourses = () => {
                         <Eye className="h-4 w-4 mr-2" />
                         View
                       </DropdownMenuItem>
-                      <DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => navigate(`/admin/editcourse/${course._id}`)}>
                         <Edit className="h-4 w-4 mr-2" />
                         Edit
                       </DropdownMenuItem>
@@ -253,7 +283,10 @@ const Mycourses = () => {
                         <Copy className="h-4 w-4 mr-2" />
                         Duplicate
                       </DropdownMenuItem>
-                      <DropdownMenuItem className="text-red-600">
+                      <DropdownMenuItem
+                        className="text-red-600"
+                        onClick={() => setDeleteCourseId(course._id)}
+                      >
                         <Trash className="h-4 w-4 mr-2" />
                         Delete
                       </DropdownMenuItem>
@@ -261,6 +294,7 @@ const Mycourses = () => {
                   </DropdownMenu>
                 </div>
               </CardHeader>
+
               <CardContent>
                 <div className="flex items-center gap-4 text-sm text-muted-foreground mb-4">
                   <div className="flex items-center gap-1">
@@ -287,6 +321,30 @@ const Mycourses = () => {
           ))}
         </div>
       )}
+
+      {/* Delete Confirmation Dialog (shadcn/ui) */}
+      <AlertDialog open={!!deleteCourseId} onOpenChange={(open) => !open && setDeleteCourseId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Course</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this course? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting} onClick={() => setDeleteCourseId(null)}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-red-600 hover:bg-red-700"
+              disabled={deleting}
+              onClick={handleConfirmDelete}
+            >
+              {deleting ? "Deleting..." : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

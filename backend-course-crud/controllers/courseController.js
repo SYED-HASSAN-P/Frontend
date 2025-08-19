@@ -1,5 +1,6 @@
 import Course from "../models/Course.js";
 
+// Create course
 export const createCourse = async (req, res) => {
   try {
     const {
@@ -23,7 +24,6 @@ export const createCourse = async (req, res) => {
 
     const thumbnailPath = req.file ? `/uploads/${req.file.filename}` : null;
 
-    // Save to MongoDB
     const newCourse = await Course.create({
       title,
       description,
@@ -37,8 +37,9 @@ export const createCourse = async (req, res) => {
       endDate,
       categories: parsedCategories,
       lessons: parsedLessons,
-      thumbnail: req.file ? `/uploads/${req.file.filename}` : null  // ✅ store only filename
+      thumbnail: thumbnailPath,
     });
+
     await newCourse.save();
     res.status(201).json({
       message: "Course created successfully",
@@ -49,14 +50,27 @@ export const createCourse = async (req, res) => {
   }
 };
 
-
 // Get all courses
-
-
 export const getCourses = async (req, res) => {
   try {
     const courses = await Course.find().sort({ createdAt: -1 });
     res.json(courses);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// ✅ Delete course
+export const deleteCourse = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const course = await Course.findByIdAndDelete(id);
+
+    if (!course) {
+      return res.status(404).json({ error: "Course not found" });
+    }
+
+    res.json({ message: "Course deleted successfully", course });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
